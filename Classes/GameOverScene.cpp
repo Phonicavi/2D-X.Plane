@@ -35,7 +35,7 @@ bool GameOverScene::init()
     this->addChild(menu, 1);
     
     // add background
-    auto bgi = Sprite::create("res/bg_02.jpg");
+    auto bgi = Sprite::create("res/bg_01.jpg");
     bgi->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height/2 + origin.y));
     float _scale_times = MAX(visibleSize.width / bgi->getContentSize().width,
                              visibleSize.height / bgi->getContentSize().height);

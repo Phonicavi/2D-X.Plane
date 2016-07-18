@@ -32,10 +32,6 @@ bool HelloWorld::init()
     
     auto visibleSize = Director::getInstance()->getVisibleSize();
     auto origin = Director::getInstance()->getVisibleOrigin();
-    _score = 0;
-    _score_b = 1500;
-    _score_m = 800;
-    _score_s = 100;
     _touch_flag = false;
     _touch_p = Vec2(0, 0);
 
@@ -67,6 +63,7 @@ bool HelloWorld::init()
     
     auto label = Label::createWithTTF("Cocos2D-X Plane", "fonts/Marker Felt.ttf", 24);
     auto score_board = Label::create();
+    auto level_board = Label::create();
     // position the label on the center of the screen
     label->setPosition(Vec2(origin.x + visibleSize.width/2,
                             origin.y + visibleSize.height - 2*label->getContentSize().height));
@@ -75,17 +72,25 @@ bool HelloWorld::init()
                                   1.2*score_board->getContentSize().height));
     score_board->setSystemFontName("fonts/Marker Felt.ttf");
     score_board->setSystemFontSize(18);
+    level_board->setPosition(Vec2(origin.x + visibleSize.width/2,
+                                  origin.y + visibleSize.height - 3.75*label->getContentSize().height -
+                                  level_board->getContentSize().height));
+    level_board->setSystemFontName("fonts/Marker Felt.ttf");
+    level_board->setSystemFontSize(15);
+    
+    // text color
     label->setTextColor(Color4B(55, 55, 55, 55));
     score_board->setTextColor(Color4B(55, 55, 55, 55));
-    
+    level_board->setTextColor(Color4B(155, 155, 155, 155));
     
     // add the label as a child to this layer
     this->addChild(label, 1);
     this->addChild(score_board, 1);
+    this->addChild(level_board, 1);
     
 
     // add Background
-    auto bgi = Sprite::create("res/bg_01.jpg");
+    auto bgi = Sprite::create("res/bg_02.jpg");
     bgi->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height/2 + origin.y));
     float _scale_times = MAX(visibleSize.width / bgi->getContentSize().width,
                              visibleSize.height / bgi->getContentSize().height);
@@ -117,13 +122,9 @@ bool HelloWorld::init()
     
     // CCLOG("visibleSize: %f %f", visibleSize.width, visibleSize.height);
     // CCLOG("plane contentSize: %f %f", plane->getContentSize().width, plane->getContentSize().height);
+
     
-    auto _rate = 0.08;
-    auto _speed = 5.0;
-    auto _plane_sp = 1.5;
-    
-    
-    schedule([this, visibleSize, origin, plane, score_board, _rate, _speed, _plane_sp](float f){
+    schedule([this, visibleSize, origin, plane, score_board](float f){
 
         score_board->setString(StringUtils::format("%d", _score));
 
@@ -142,7 +143,7 @@ bool HelloWorld::init()
     // move plane : Touches
     auto tp_listen = EventListenerTouchAllAtOnce::create();
     
-    tp_listen->onTouchesMoved = [this, plane, _plane_sp](const std::vector<Touch*>& touches, Event *event){
+    tp_listen->onTouchesMoved = [this, plane](const std::vector<Touch*>& touches, Event *event){
         // onTouchesMoved : update _touch_p
         auto t = touches[0];
         _touch_p = t->getLocation();
@@ -169,7 +170,7 @@ bool HelloWorld::init()
     schedule([this, visibleSize, origin, _cst, plane](float f){
         
         Sprite *bullet;
-        if (this->_score > level1) {
+        if (this->_score >= level1) {
             bullet = Sprite::createWithTexture(img, Rect(112*_cst, 2*_cst, 9*_cst, 17*_cst));
         } else {
             bullet = Sprite::createWithTexture(img, Rect(66*_cst, 237*_cst, 7*_cst, 20*_cst));
@@ -196,7 +197,7 @@ bool HelloWorld::init()
         this->addChild(bullet, 1);
         
         // upgrade: 1
-        if (this->_score > level1) {
+        if (this->_score >= level1) {
             auto p1 = Sprite::createWithTexture(img, Rect(112*_cst, 2*_cst, 9*_cst, 17*_cst));
             auto f1 = MoveTo::create((visibleSize.height - p1->getPositionY()) / (visibleSize.height/dur_time),
                                      Vec2(plane->getPositionX() - plane->getContentSize().width/4,
@@ -237,7 +238,7 @@ bool HelloWorld::init()
         }
         
         // upgrade: 2
-        if (this->_score > level2) {
+        if (this->_score >= level2) {
             auto p1 = Sprite::createWithTexture(img, Rect(112*_cst, 2*_cst, 9*_cst, 17*_cst));
             auto f1 = MoveTo::create((visibleSize.height - p1->getPositionY()) / (visibleSize.height/dur_time),
                                      Vec2(plane->getPositionX() - plane->getContentSize().width/2,
@@ -278,7 +279,7 @@ bool HelloWorld::init()
         }
         
         // upgrade: 3
-        if (this->_score > level3) {
+        if (this->_score >= level3) {
             auto p1 = Sprite::createWithTexture(img, Rect(112*_cst, 2*_cst, 9*_cst, 17*_cst));
             auto f1 = MoveTo::create((visibleSize.height - p1->getPositionY()) / (visibleSize.height/dur_time),
                                      Vec2(plane->getPositionX() - 2*plane->getContentSize().width,
@@ -319,7 +320,7 @@ bool HelloWorld::init()
         }
         
         // upgrade: 4
-        if (this->_score > level4) {
+        if (this->_score >= level4) {
             auto p1 = Sprite::createWithTexture(img, Rect(112*_cst, 2*_cst, 9*_cst, 17*_cst));
             auto f1 = MoveTo::create((visibleSize.height - p1->getPositionY()) / (visibleSize.height/dur_time),
                                      Vec2(plane->getPositionX() - 4*plane->getContentSize().width,
@@ -360,7 +361,7 @@ bool HelloWorld::init()
         }
         
         // upgrade: 5
-        if (this->_score > level5) {
+        if (this->_score >= level5) {
             auto p1 = Sprite::createWithTexture(img, Rect(112*_cst, 2*_cst, 9*_cst, 17*_cst));
             auto f1 = MoveTo::create((visibleSize.height - p1->getPositionY()) / (visibleSize.height/dur_time),
                                      Vec2(plane->getPositionX() - 6*plane->getContentSize().width,
@@ -402,35 +403,101 @@ bool HelloWorld::init()
         
     }, 0.15, "Shoot");
     
-    freq_b = 6.0, freq_m = 3.0, freq_s = 0.8;
+    
     // upgrade enemy
-    schedule([this](float f){
+    schedule([this, level_board](float f){
         
         if (this->_score > level1) {
+            // _score
+            this->_score_b = 1500;
+            this->_score_m = 1000;
+            this->_score_s = 100;
+            // freq
             this->freq_b = 5.5;
             this->freq_m = 2.8;
             this->freq_s = 0.75;
+            // _HP++
+            this->_HP_b = 12;
+            this->_HP_m = 5;
+            this->_HP_s = 2;
+            // level
+            _level = 2;
+            // speed
+            _plane_sp = 1.6;
         }
         if (this->_score > level2) {
+            // _score
+            this->_score_b = 2000;
+            this->_score_m = 800;
+            this->_score_s = 100;
+            // freq
             this->freq_b = 5.0;
             this->freq_m = 2.5;
             this->freq_s = 0.7;
+            // _HP++
+            this->_HP_b = 20;
+            this->_HP_m = 7;
+            this->_HP_s = 3;
+            // level
+            _level = 3;
+            // speed
+            _plane_sp = 1.7;
         }
         if (this->_score > level3) {
+            // _score
+            this->_score_b = 2000;
+            this->_score_m = 800;
+            this->_score_s = 200;
+            // freq
             this->freq_b = 4.7;
             this->freq_m = 2.4;
             this->freq_s = 0.65;
+            // _HP++
+            this->_HP_b = 24;
+            this->_HP_m = 10;
+            this->_HP_s = 5;
+            // level
+            _level = 4;
+            // speed
+            _plane_sp = 1.8;
         }
         if (this->_score > level4) {
+            // _score
+            this->_score_b = 2750;
+            this->_score_m = 1200;
+            this->_score_s = 100;
+            // freq
             this->freq_b = 4.3;
             this->freq_m = 2.1;
             this->freq_s = 0.6;
+            // _HP++
+            this->_HP_b = 30;
+            this->_HP_m = 15;
+            this->_HP_s = 7;
+            // level
+            _level = 5;
+            // speed
+            _plane_sp = 1.9;
         }
         if (this->_score > level5) {
+            // _score
+            this->_score_b = 2750;
+            this->_score_m = 1200;
+            this->_score_s = 300;
+            // freq
             this->freq_b = 4.0;
             this->freq_m = 1.8;
             this->freq_s = 0.5;
+            // _HP++
+            this->_HP_b = 40;
+            this->_HP_m = 20;
+            this->_HP_s = 10;
+            // level
+            _level = 6;
+            // speed
+            _plane_sp = 2.0;
         }
+        level_board->setString(StringUtils::format("Level %d", _level));
         
     }, "More Targets");
     
@@ -474,7 +541,7 @@ bool HelloWorld::init()
             }
         }),
                                            NULL));
-        target->setTag(130);
+        target->setTag(100+_HP_b);
         
         this->_targets_b.pushBack(target);
         this->addChild(target, 2);
@@ -517,7 +584,7 @@ bool HelloWorld::init()
             }
         }),
                                            NULL));
-        target->setTag(230);
+        target->setTag(100+_HP_m);
         
         this->_targets_m.pushBack(target);
         this->addChild(target, 2);
@@ -560,7 +627,7 @@ bool HelloWorld::init()
             }
         }),
                                            NULL));
-        target->setTag(330);
+        target->setTag(100+_HP_s);
         
         this->_targets_s.pushBack(target);
         this->addChild(target, 2);
@@ -570,6 +637,7 @@ bool HelloWorld::init()
     
     // collision dectection
     auto audio = SimpleAudioEngine::getInstance();
+    audio->preloadEffect("res/explosion.mp3");
     // name="explosion_01" Rect(216*_cst, 117*_cst, 26*_cst, 26*_cst)
     // name="explosion_02" Rect(144*_cst, 93*_cst, 38*_cst, 39*_cst)
     // name="explosion_03" Rect(201*_cst, 44*_cst, 40*_cst, 42*_cst)
@@ -583,9 +651,10 @@ bool HelloWorld::init()
             for (auto _bul : this->_bullets) {
                 if (_t_rect.intersectsRect(_bul->getBoundingBox())) {
                     bullet2del.pushBack(_bul);
+                    _t_b->setTag(_t_b->getTag()-1);
                 }
             }
-            if (!bullet2del.empty()) {
+            if (_t_b->getTag() <= 100) {
                 _t_b2del.pushBack(_t_b);
             }
             // del bullets
@@ -625,9 +694,10 @@ bool HelloWorld::init()
             for (auto _bul : this->_bullets) {
                 if (_t_rect.intersectsRect(_bul->getBoundingBox())) {
                     bullet2del.pushBack(_bul);
+                    _t_m->setTag(_t_m->getTag()-1);
                 }
             }
-            if (!bullet2del.empty()) {
+            if (_t_m->getTag() <= 100) {
                 _t_m2del.pushBack(_t_m);
             }
             // del bullets
@@ -667,9 +737,10 @@ bool HelloWorld::init()
             for (auto _bul : this->_bullets) {
                 if (_t_rect.intersectsRect(_bul->getBoundingBox())) {
                     bullet2del.pushBack(_bul);
+                    _t_s->setTag(_t_s->getTag()-1);
                 }
             }
-            if (!bullet2del.empty()) {
+            if (_t_s->getTag() <= 100) {
                 _t_s2del.pushBack(_t_s);
             }
             // del bullets
