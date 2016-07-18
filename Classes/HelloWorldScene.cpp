@@ -1,5 +1,6 @@
 #include "HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
+#include "GameWinScene.hpp"
 #include "GameOverScene.hpp"
 
 USING_NS_CC;
@@ -61,9 +62,12 @@ bool HelloWorld::init()
     // add a label shows "Hello World"
     // create and initialize a label
     
-    auto label = Label::createWithTTF("Cocos2D-X Plane", "fonts/Marker Felt.ttf", 24);
+    auto label = Label::createWithTTF("2D-X Plane", "fonts/Marker Felt.ttf", 24);
     auto score_board = Label::create();
     auto level_board = Label::create();
+    auto star_img = Director::getInstance()->getTextureCache()->addImage("res/star.png");
+    auto star_board = Sprite::createWithTexture(star_img);
+    auto star_cal = Label::createWithTTF(StringUtils::format("x%d", this->star), "fonts/Marker Felt.ttf", 12);
     // position the label on the center of the screen
     label->setPosition(Vec2(origin.x + visibleSize.width/2,
                             origin.y + visibleSize.height - 2*label->getContentSize().height));
@@ -77,16 +81,25 @@ bool HelloWorld::init()
                                   level_board->getContentSize().height));
     level_board->setSystemFontName("fonts/Marker Felt.ttf");
     level_board->setSystemFontSize(15);
+    float _star_margin = MAX(star_board->getContentSize().height/2, star_cal->getContentSize().height/2);
+    star_board->setPosition(Vec2(origin.x + visibleSize.width - star_board->getContentSize().width/2,
+                           origin.y + visibleSize.height - _star_margin));
+    star_cal->setPosition(Vec2(star_board->getPositionX() - star_board->getContentSize().width/2 -
+                               star_cal->getContentSize().width/2,
+                               star_board->getPositionY() - 1));
     
     // text color
     label->setTextColor(Color4B(55, 55, 55, 55));
     score_board->setTextColor(Color4B(55, 55, 55, 55));
     level_board->setTextColor(Color4B(155, 155, 155, 155));
+    star_cal->setTextColor(Color4B(18, 18, 18, 100));
     
     // add the label as a child to this layer
     this->addChild(label, 1);
     this->addChild(score_board, 1);
     this->addChild(level_board, 1);
+    this->addChild(star_board, 1);
+    this->addChild(star_cal, 1);
     
 
     // add Background
@@ -125,11 +138,8 @@ bool HelloWorld::init()
 
     
     schedule([this, visibleSize, origin, plane, score_board](float f){
-
         score_board->setString(StringUtils::format("%d", _score));
-
         // move plane
-        
         if (_touch_flag) {
             auto _dir = Vec2(_touch_p.x - plane->getPositionX(), _touch_p.y - plane->getPositionY());
             _dir.normalize();
@@ -137,22 +147,18 @@ bool HelloWorld::init()
             // CCLOG("touch: %f %f", _touch_p.x, _touch_p.y);
             plane->setPosition(plane->getPosition() + _dir*_plane_sp);
         }
-        
     }, "Action");
     
     // move plane : Touches
     auto tp_listen = EventListenerTouchAllAtOnce::create();
-    
     tp_listen->onTouchesMoved = [this, plane](const std::vector<Touch*>& touches, Event *event){
         // onTouchesMoved : update _touch_p
         auto t = touches[0];
         _touch_p = t->getLocation();
     };
-    
     tp_listen->onTouchesEnded = [this](const std::vector<Touch*>& touches, Event *event){
         _touch_flag = false;
     };
-    
     tp_listen->onTouchesBegan = [this, plane](const std::vector<Touch*>& touches, Event *event){
         auto t = touches[0];
         if (!plane->getBoundingBox().containsPoint(t->getLocation())) {
@@ -160,41 +166,78 @@ bool HelloWorld::init()
             _touch_p = t->getLocation();
         }
     };
-    
     Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(tp_listen, 1);
     
     
-    // add bullets
-    // Rect(112*_cst, 2*_cst, 9*_cst, 17*_cst)
-    // Rect(66*_cst, 237*_cst, 7*_cst, 20*_cst)
-    schedule([this, visibleSize, origin, _cst, plane](float f){
-        
-        Sprite *bullet;
-        if (this->_score >= level1) {
-            bullet = Sprite::createWithTexture(img, Rect(112*_cst, 2*_cst, 9*_cst, 17*_cst));
-        } else {
-            bullet = Sprite::createWithTexture(img, Rect(66*_cst, 237*_cst, 7*_cst, 20*_cst));
-        }
-        float dur_time = 0.8; // time to fly through height
-        auto fly = MoveTo::create((visibleSize.height - bullet->getPositionY()) / (visibleSize.height/dur_time),
-                                  Vec2(plane->getPositionX(),
-                                       visibleSize.height + bullet->getContentSize().height/2));
-        
-        bullet->setPosition(Vec2(plane->getPositionX(),
-                                 plane->getPositionY() + bullet->getContentSize().height));
-        bullet->runAction(Sequence::create(fly,
-                                           CallFunc::create([this, bullet](){
-            this->removeChild(bullet);
-            auto index = this->_bullets.getIndex(bullet);
-            if (index > -1) {
-                this->_bullets.erase(index);
+    // audio effects
+    /*
+     <SubTexture name="pause_button" x="175" y="148" width="22" height="23"/>
+     <SubTexture name="resume_button" x="216" y="145" width="25" height="27"/>
+     */
+    auto audio_button = Sprite::create();
+    audio_button->setTexture(img);
+    audio_button->setTextureRect(Rect(175*_cst, 148*_cst, 22*_cst, 23*_cst));
+    audio_button->setPosition(Vec2(origin.x + 32*_cst,
+                                   origin.y + visibleSize.height - 32*_cst));
+    audio_button->setScale(2.0);
+    this->addChild(audio_button);
+    
+    auto au_listen = EventListenerTouchOneByOne::create();
+    au_listen->onTouchBegan = [this, audio_button, _cst](Touch *t, Event *event){
+        if (audio_button->getBoundingBox().containsPoint(t->getLocation())) {
+            if (this->audio_count) {
+                audio_button->setTextureRect(Rect(216*_cst, 145*_cst, 25*_cst, 27*_cst));
+                this->audio_count = 0;
+            } else {
+                audio_button->setTextureRect(Rect(175*_cst, 148*_cst, 22*_cst, 23*_cst));
+                this->audio_count = 1;
             }
-        }),
-                                           NULL)); // add explosion
-        bullet->setTag(12);
+        }
+        return false;
+    };
+    // Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(au_listen, this);
+    Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(au_listen, -128);
+    
+    auto audio = SimpleAudioEngine::getInstance();
+    audio->preloadEffect("res/explosion.mp3");
+    audio->preloadEffect("res/shoot.mp3");
+    
+    
+    // add bullets
+    // red: Rect(112*_cst, 2*_cst, 9*_cst, 17*_cst)
+    // black: Rect(66*_cst, 237*_cst, 7*_cst, 20*_cst)
+    schedule([this, audio, visibleSize, origin, _cst, plane](float f){
         
-        this->_bullets.pushBack(bullet);
-        this->addChild(bullet, 1);
+        if (audio_count) {
+            audio->playEffect("res/shoot.mp3");
+        }
+        
+        float dur_time = 0.8; // time to fly through height
+        Sprite *bullet;
+        // level == 1
+        if (_level == 1) {
+            bullet = Sprite::createWithTexture(img, Rect(66*_cst, 237*_cst, 7*_cst, 20*_cst));
+        } else if (_level > 2) {
+            bullet = Sprite::createWithTexture(img, Rect(112*_cst, 2*_cst, 9*_cst, 17*_cst));
+        }
+        if (_level == 1 || _level > 2) {
+            auto fly = MoveTo::create((visibleSize.height - bullet->getPositionY()) / (visibleSize.height/dur_time),
+                                      Vec2(plane->getPositionX(),
+                                           visibleSize.height + bullet->getContentSize().height/2));
+            
+            bullet->setPosition(Vec2(plane->getPositionX(),
+                                     plane->getPositionY() + bullet->getContentSize().height));
+            bullet->runAction(Sequence::create(fly,
+                                               CallFunc::create([this, bullet](){
+                this->removeChild(bullet);
+                this->_bullets.eraseObject(bullet);
+            }),
+                                               NULL)); // add explosion
+            bullet->setTag(12);
+            
+            this->_bullets.pushBack(bullet);
+            this->addChild(bullet, 1);
+        }
         
         // upgrade: 1
         if (this->_score >= level1) {
@@ -207,10 +250,7 @@ bool HelloWorld::init()
             p1->runAction(Sequence::create(f1,
                                            CallFunc::create([this, p1](){
                 this->removeChild(p1);
-                auto index = this->_bullets.getIndex(p1);
-                if (index > -1) {
-                    this->_bullets.erase(index);
-                }
+                this->_bullets.eraseObject(p1);
             }),
                                            NULL)); // add explosion
             p1->setTag(12);
@@ -226,10 +266,7 @@ bool HelloWorld::init()
             p2->runAction(Sequence::create(f2,
                                            CallFunc::create([this, p2](){
                 this->removeChild(p2);
-                auto index = this->_bullets.getIndex(p2);
-                if (index > -1) {
-                    this->_bullets.erase(index);
-                }
+                this->_bullets.eraseObject(p2);
             }),
                                           NULL)); // add explosion
             p2->setTag(12);
@@ -248,10 +285,7 @@ bool HelloWorld::init()
             p1->runAction(Sequence::create(f1,
                                            CallFunc::create([this, p1](){
                 this->removeChild(p1);
-                auto index = this->_bullets.getIndex(p1);
-                if (index > -1) {
-                    this->_bullets.erase(index);
-                }
+                this->_bullets.eraseObject(p1);
             }),
                                            NULL)); // add explosion
             p1->setTag(12);
@@ -267,10 +301,7 @@ bool HelloWorld::init()
             p2->runAction(Sequence::create(f2,
                                            CallFunc::create([this, p2](){
                 this->removeChild(p2);
-                auto index = this->_bullets.getIndex(p2);
-                if (index > -1) {
-                    this->_bullets.erase(index);
-                }
+                this->_bullets.eraseObject(p2);
             }),
                                            NULL)); // add explosion
             p2->setTag(12);
@@ -289,10 +320,7 @@ bool HelloWorld::init()
             p1->runAction(Sequence::create(f1,
                                            CallFunc::create([this, p1](){
                 this->removeChild(p1);
-                auto index = this->_bullets.getIndex(p1);
-                if (index > -1) {
-                    this->_bullets.erase(index);
-                }
+                this->_bullets.eraseObject(p1);
             }),
                                            NULL)); // add explosion
             p1->setTag(12);
@@ -308,10 +336,7 @@ bool HelloWorld::init()
             p2->runAction(Sequence::create(f2,
                                            CallFunc::create([this, p2](){
                 this->removeChild(p2);
-                auto index = this->_bullets.getIndex(p2);
-                if (index > -1) {
-                    this->_bullets.erase(index);
-                }
+                this->_bullets.eraseObject(p2);
             }),
                                            NULL)); // add explosion
             p2->setTag(12);
@@ -330,10 +355,7 @@ bool HelloWorld::init()
             p1->runAction(Sequence::create(f1,
                                            CallFunc::create([this, p1](){
                 this->removeChild(p1);
-                auto index = this->_bullets.getIndex(p1);
-                if (index > -1) {
-                    this->_bullets.erase(index);
-                }
+                this->_bullets.eraseObject(p1);
             }),
                                            NULL)); // add explosion
             p1->setTag(12);
@@ -349,10 +371,7 @@ bool HelloWorld::init()
             p2->runAction(Sequence::create(f2,
                                            CallFunc::create([this, p2](){
                 this->removeChild(p2);
-                auto index = this->_bullets.getIndex(p2);
-                if (index > -1) {
-                    this->_bullets.erase(index);
-                }
+                this->_bullets.eraseObject(p2);
             }),
                                            NULL)); // add explosion
             p2->setTag(12);
@@ -371,10 +390,7 @@ bool HelloWorld::init()
             p1->runAction(Sequence::create(f1,
                                            CallFunc::create([this, p1](){
                 this->removeChild(p1);
-                auto index = this->_bullets.getIndex(p1);
-                if (index > -1) {
-                    this->_bullets.erase(index);
-                }
+                this->_bullets.eraseObject(p1);
             }),
                                            NULL)); // add explosion
             p1->setTag(12);
@@ -390,10 +406,7 @@ bool HelloWorld::init()
             p2->runAction(Sequence::create(f2,
                                            CallFunc::create([this, p2](){
                 this->removeChild(p2);
-                auto index = this->_bullets.getIndex(p2);
-                if (index > -1) {
-                    this->_bullets.erase(index);
-                }
+                this->_bullets.eraseObject(p2);
             }),
                                            NULL)); // add explosion
             p2->setTag(12);
@@ -405,7 +418,7 @@ bool HelloWorld::init()
     
     
     // upgrade enemy
-    schedule([this, level_board](float f){
+    schedule([this, level_board, star_cal](float f){
         
         if (this->_score > level1) {
             // _score
@@ -423,7 +436,7 @@ bool HelloWorld::init()
             // level
             _level = 2;
             // speed
-            _plane_sp = 1.6;
+            _plane_sp = 1.7;
         }
         if (this->_score > level2) {
             // _score
@@ -441,7 +454,7 @@ bool HelloWorld::init()
             // level
             _level = 3;
             // speed
-            _plane_sp = 1.7;
+            _plane_sp = 2.0;
         }
         if (this->_score > level3) {
             // _score
@@ -459,7 +472,7 @@ bool HelloWorld::init()
             // level
             _level = 4;
             // speed
-            _plane_sp = 1.8;
+            _plane_sp = 2.1;
         }
         if (this->_score > level4) {
             // _score
@@ -477,7 +490,7 @@ bool HelloWorld::init()
             // level
             _level = 5;
             // speed
-            _plane_sp = 1.9;
+            _plane_sp = 2.4;
         }
         if (this->_score > level5) {
             // _score
@@ -495,9 +508,11 @@ bool HelloWorld::init()
             // level
             _level = 6;
             // speed
-            _plane_sp = 2.0;
+            _plane_sp = 3.0;
         }
-        level_board->setString(StringUtils::format("Level %d", _level));
+        
+        level_board->setString(StringUtils::format("Level %d", this->_level));
+        star_cal->setString(StringUtils::format("x%d", this->star));
         
     }, "More Targets");
     
@@ -535,10 +550,8 @@ bool HelloWorld::init()
         target->runAction(Sequence::create(fly,
                                            CallFunc::create([this, target](){
             this->removeChild(target);
-            auto index = this->_targets_b.getIndex(target);
-            if (index > -1) {
-                this->_targets_b.erase(index);
-            }
+            this->_targets_b.eraseObject(target);
+            this->star -= 3;
         }),
                                            NULL));
         target->setTag(100+_HP_b);
@@ -578,10 +591,8 @@ bool HelloWorld::init()
         target->runAction(Sequence::create(fly,
                                            CallFunc::create([this, target](){
             this->removeChild(target);
-            auto index = this->_targets_m.getIndex(target);
-            if (index > -1) {
-                this->_targets_m.erase(index);
-            }
+            this->_targets_m.eraseObject(target);
+            this->star -= 2;
         }),
                                            NULL));
         target->setTag(100+_HP_m);
@@ -621,10 +632,8 @@ bool HelloWorld::init()
         target->runAction(Sequence::create(fly,
                                            CallFunc::create([this, target](){
             this->removeChild(target);
-            auto index = this->_targets_s.getIndex(target);
-            if (index > -1) {
-                this->_targets_s.erase(index);
-            }
+            this->_targets_s.eraseObject(target);
+            this->star -= 1;
         }),
                                            NULL));
         target->setTag(100+_HP_s);
@@ -636,8 +645,6 @@ bool HelloWorld::init()
     
     
     // collision dectection
-    auto audio = SimpleAudioEngine::getInstance();
-    audio->preloadEffect("res/explosion.mp3");
     // name="explosion_01" Rect(216*_cst, 117*_cst, 26*_cst, 26*_cst)
     // name="explosion_02" Rect(144*_cst, 93*_cst, 38*_cst, 39*_cst)
     // name="explosion_03" Rect(201*_cst, 44*_cst, 40*_cst, 42*_cst)
@@ -659,24 +666,20 @@ bool HelloWorld::init()
             }
             // del bullets
             for (auto _bul : bullet2del) {
-                auto index = this->_bullets.getIndex(_bul);
-                if (index > -1) {
-                    this->_bullets.erase(index);
-                }
                 this->removeChild(_bul);
+                this->_bullets.eraseObject(_bul);
             }
         }
         // del target_b
         for (auto _t_b : _t_b2del) {
-            auto index = this->_targets_b.getIndex(_t_b);
-            if (index > -1) {
-                this->_targets_b.erase(index);
-            }
+            this->_targets_b.eraseObject(_t_b);
             // add explosion
             auto exp = Sprite::createWithTexture(img, Rect(201*_cst, 44*_cst, 40*_cst, 42*_cst));
             exp->setPosition(Vec2(_t_b->getPositionX(), _t_b->getPositionY()-_t_b->getContentSize().height/4));
             this->addChild(exp);
-            audio->playEffect("res/explosion.mp3");
+            if (audio_count) {
+                audio->playEffect("res/explosion.mp3");
+            }
             exp->runAction(Sequence::create(
                                             MoveBy::create(0.5, Vec2(0, 0)),
                                             // ShuffleTiles::create(0.8, Size(180, 180), 5),
@@ -702,24 +705,20 @@ bool HelloWorld::init()
             }
             // del bullets
             for (auto _bul : bullet2del) {
-                auto index = this->_bullets.getIndex(_bul);
-                if (index > -1) {
-                    this->_bullets.erase(index);
-                }
                 this->removeChild(_bul);
+                this->_bullets.eraseObject(_bul);
             }
         }
         // del target_m
         for (auto _t_m : _t_m2del) {
-            auto index = this->_targets_m.getIndex(_t_m);
-            if (index > -1) {
-                this->_targets_m.erase(index);
-            }
+            this->_targets_m.eraseObject(_t_m);
             // add explosion
             auto exp = Sprite::createWithTexture(img, Rect(144*_cst, 93*_cst, 38*_cst, 39*_cst));
             exp->setPosition(Vec2(_t_m->getPositionX(), _t_m->getPositionY()-_t_m->getContentSize().height/4));
             this->addChild(exp);
-            audio->playEffect("res/explosion.mp3");
+            if (audio_count) {
+                audio->playEffect("res/explosion.mp3");
+            }
             exp->runAction(Sequence::create(
                                             MoveBy::create(0.3, Vec2(0, 0)),
                                             // ShuffleTiles::create(0.5, Size(180, 180), 5),
@@ -745,24 +744,20 @@ bool HelloWorld::init()
             }
             // del bullets
             for (auto _bul : bullet2del) {
-                auto index = this->_bullets.getIndex(_bul);
-                if (index > -1) {
-                    this->_bullets.erase(index);
-                }
                 this->removeChild(_bul);
+                this->_bullets.eraseObject(_bul);
             }
         }
         // del target_s
         for (auto _t_s : _t_s2del) {
-            auto index = this->_targets_s.getIndex(_t_s);
-            if (index > -1) {
-                this->_targets_s.erase(index);
-            }
+            this->_targets_s.eraseObject(_t_s);
             // add explosion
             auto exp = Sprite::createWithTexture(img, Rect(216*_cst, 117*_cst, 26*_cst, 26*_cst));
             exp->setPosition(Vec2(_t_s->getPositionX(), _t_s->getPositionY()-_t_s->getContentSize().height/4));
             this->addChild(exp);
-            audio->playEffect("res/explosion.mp3");
+            if (audio_count) {
+                audio->playEffect("res/explosion.mp3");
+            }
             exp->runAction(Sequence::create(
                                             MoveBy::create(0.2, Vec2(0, 0)),
                                             // ShuffleTiles::create(0.3, Size(180, 180), 5),
@@ -775,7 +770,7 @@ bool HelloWorld::init()
     }, "Collision");
     
     
-    // scene: game over
+    // scene: game over or scene: win
     schedule([this, audio, visibleSize, origin, plane, _cst](float f){
         
         auto plane_box = plane->getBoundingBox();
@@ -803,25 +798,32 @@ bool HelloWorld::init()
                 }
             }
         }
-        if (boooom) {
+        if (boooom || this->star <= 0) {
             // add death explosion
             auto exp = Sprite::createWithTexture(img, Rect(201*_cst, 44*_cst, 40*_cst, 42*_cst));
             exp->setPosition(Vec2(plane->getPositionX(), plane->getPositionY()));
             this->addChild(exp);
-            audio->playEffect("res/explosion.mp3");
+            if (audio_count) {
+                audio->playEffect("res/explosion.mp3");
+            }
             exp->runAction(Sequence::create(
                                             MoveBy::create(0.5, Vec2(0, 0)),
                                             // ShuffleTiles::create(0.8, Size(180, 180), 5),
                                             CallFunc::create([this, exp](){ this->removeChild(exp);}),
                                             NULL));
             
-            // auto _game_over = GameOverScene::createScene();
+            // game over
             auto _game_over = GameOverScene::createScene(this->_score);
             this->retain();
             Director::getInstance()->replaceScene(_game_over);
+        } else if (this->_score > level5 && this->star > 0) {
+            // game wim
+            auto _game_win = GameWinScene::createScene(this->_score);
+            this->retain();
+            Director::getInstance()->replaceScene(_game_win);
         }
 
-    }, "Game Over");
+    }, "Game Final");
 
     return true;
 }

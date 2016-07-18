@@ -1,16 +1,16 @@
 //
-//  GameOverScene.cpp
+//  GameWinScene.cpp
 //  CocosBall
 //
-//  Created by ChiuPhonic on 16/7/17.
+//  Created by ChiuPhonic on 16/7/19.
 //
 //
 
-#include "GameOverScene.hpp"
+#include "GameWinScene.hpp"
 
 USING_NS_CC;
 
-bool GameOverScene::init()
+bool GameWinScene::init()
 {
     if (!Layer::init()) {
         return false;
@@ -23,7 +23,7 @@ bool GameOverScene::init()
     auto closeItem = MenuItemImage::create(
                                            "CloseNormal.png",
                                            "CloseSelected.png",
-                                           CC_CALLBACK_1(GameOverScene::menuCloseCallback, this));
+                                           CC_CALLBACK_1(GameWinScene::menuCloseCallback, this));
     
     closeItem->setPosition(Vec2(origin.x + visibleSize.width - closeItem->getContentSize().width/2,
                                 origin.y + closeItem->getContentSize().height/2));
@@ -45,31 +45,46 @@ bool GameOverScene::init()
     return true;
 }
 
-cocos2d::Scene* GameOverScene::createScene()
+cocos2d::Scene* GameWinScene::createScene()
 {
     auto scene = Scene::create();
-    auto layer = GameOverScene::create();
+    auto layer = GameWinScene::create();
     scene->addChild(layer);
     return scene;
 }
 
-cocos2d::Scene* GameOverScene::createScene(int _score)
+cocos2d::Scene* GameWinScene::createScene(int _score)
 {
     auto scene = Scene::create();
-    auto layer = GameOverScene::create();
+    auto layer = GameWinScene::create();
     
     auto visibleSize = Director::getInstance()->getVisibleSize();
     auto origin = Director::getInstance()->getVisibleOrigin();
     
     // add score_board
-    auto label = Label::createWithTTF("Game Over", "fonts/Marker Felt.ttf", 24);
+    auto label = Label::createWithTTF("You Win!!", "fonts/Marker Felt.ttf", 24);
     auto score_board = Label::create();
+    auto star_img = Director::getInstance()->getTextureCache()->addImage("res/star.png");
+    auto star_board = Sprite::createWithTexture(star_img);
+    auto star_left = Sprite::createWithTexture(star_img);
+    auto star_right = Sprite::createWithTexture(star_img);
+    
     // position the label on the center of the screen
     label->setPosition(Vec2(origin.x + visibleSize.width/2,
-                            origin.y + visibleSize.height/2 + label->getContentSize().height));
+                            origin.y + visibleSize.height/2 + 1.35*label->getContentSize().height));
     score_board->setPosition(Vec2(origin.x + visibleSize.width/2,
                                   origin.y + visibleSize.height/2 -
-                                  1.2*score_board->getContentSize().height));
+                                  2.5*score_board->getContentSize().height));
+    star_board->setPosition(Vec2(origin.x + visibleSize.width/2,
+                                 origin.y + visibleSize.height/2 +
+                                 star_board->getContentSize().height));
+    star_left->setPosition(Vec2(origin.x + visibleSize.width/2 - star_board->getContentSize().width,
+                                 origin.y + visibleSize.height/2 +
+                                 star_board->getContentSize().height));
+    star_right->setPosition(Vec2(origin.x + visibleSize.width/2 + star_board->getContentSize().width,
+                                 origin.y + visibleSize.height/2 +
+                                 star_board->getContentSize().height));
+    // set text
     score_board->setString(StringUtils::format("Total score: %d", _score));
     score_board->setSystemFontName("fonts/Marker Felt.ttf");
     score_board->setSystemFontSize(16);
@@ -80,13 +95,16 @@ cocos2d::Scene* GameOverScene::createScene(int _score)
     // add the label as a child to this layer
     layer->addChild(label, 1);
     layer->addChild(score_board, 1);
+    layer->addChild(star_board, 1);
+    layer->addChild(star_left, 1);
+    layer->addChild(star_right, 1);
     
     scene->addChild(layer);
     return scene;
 }
 
 
-void GameOverScene::menuCloseCallback(Ref* pSender)
+void GameWinScene::menuCloseCallback(Ref* pSender)
 {
     //Close the cocos2d-x game scene and quit the application
     Director::getInstance()->end();
@@ -102,4 +120,3 @@ void GameOverScene::menuCloseCallback(Ref* pSender)
     
     
 }
-

@@ -38,9 +38,12 @@ private:
     int level2 = 50000;
     int level3 = 100000;
     int level4 = 200000;
-    int level5 = 5000000;
+    int level5 = 500000;
     
+    int star = 10;
     float _plane_sp = 1.5;
+    
+    int audio_count = 1;
     
 public:
     static cocos2d::Scene* createScene();
