@@ -42,9 +42,10 @@ bool HelloWorld::init()
                                            "CloseNormal.png",
                                            "CloseSelected.png",
                                            CC_CALLBACK_1(HelloWorld::menuCloseCallback, this));
-    
-    closeItem->setPosition(Vec2(origin.x + visibleSize.width - closeItem->getContentSize().width/2,
-                                origin.y + closeItem->getContentSize().height/2));
+    float _cit = 1.5;
+    closeItem->setScale(_cit);
+    closeItem->setPosition(Vec2(origin.x + visibleSize.width - _cit*closeItem->getContentSize().width/2,
+                                origin.y + _cit*closeItem->getContentSize().height/2));
     
     // create menu, it's an autorelease object
     auto menu = Menu::create(closeItem, NULL);
@@ -134,7 +135,7 @@ bool HelloWorld::init()
     img = Director::getInstance()->getTextureCache()->addImage("res/plane.png");
     const float _w_img = 256.0, _h_img = 256.0;
     float _cst = MAX(img->getContentSize().width / _w_img, img->getContentSize().height/ _h_img);
-    float _start_height = 20;
+    float _start_height = 30;
     /*
      <SubTexture name="hero_1" x="66" y="168" width="62" height="68"/>
      <SubTexture name="hero_2" x="2" y="168" width="62" height="75"/>
@@ -143,8 +144,9 @@ bool HelloWorld::init()
     plane->setTexture(img);
     plane->setTextureRect(Rect(66*_cst, 168*_cst, 62*_cst, 68*_cst));
     plane->setTag(1);
-    plane->setPosition(Vec2(origin.x + plane->getContentSize().width/2 +
-                            random(0.0f, visibleSize.width - plane->getContentSize().width),
+    plane->setPosition(Vec2(origin.x + /*plane->getContentSize().width/2 +
+                            random(0.0f, visibleSize.width - plane->getContentSize().width)*/
+                            visibleSize.width/2,
                             origin.y + plane->getContentSize().height/2 + _start_height));
     
     this->addChild(plane, 2);
@@ -187,22 +189,22 @@ bool HelloWorld::init()
 //        return false;
 //    }, 5.0, "More Stars");
     
-    // CCLOG("visibleSize: %f %f", visibleSize.width, visibleSize.height);
-    // CCLOG("plane contentSize: %f %f", plane->getContentSize().width, plane->getContentSize().height);
 
-    
     schedule([this, visibleSize, origin, plane, score_board](float f){
         score_board->setString(StringUtils::format("%d", _score));
         // move plane
         if (_touch_flag) {
             auto _dir = Vec2(_touch_p.x - plane->getPositionX(), _touch_p.y - plane->getPositionY());
             _dir.normalize();
-            // CCLOG("plane: %f, %f", plane->getPositionX(), plane->getPositionY());
-            // CCLOG("touch: %f %f", _touch_p.x, _touch_p.y);
             plane->setPosition(plane->getPosition() + _dir*_plane_sp);
         }
     }, "Action");
     
+    
+    ////////////////////////////
+    // add listener (x2)
+    //   tp, au
+    //
     // move plane : Touches
     auto tp_listen = EventListenerTouchAllAtOnce::create();
     tp_listen->onTouchesMoved = [this, plane](const std::vector<Touch*>& touches, Event *event){
@@ -222,8 +224,23 @@ bool HelloWorld::init()
     };
     Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(tp_listen, 1);
     
-    
     // audio
+    auto audio = SimpleAudioEngine::getInstance();
+    audio->preloadEffect("res/explosion.mp3");
+    audio->preloadEffect("res/shoot.mp3");
+    audio->preloadBackgroundMusic("res/dance_to_the_death.mp3");
+    
+    audio->setEffectsVolume(0.5);
+    audio->setBackgroundMusicVolume(0.95);
+    
+    // pause: x="184" y="117" width="30" height="29"
+    auto pauser = Sprite::createWithTexture(img, Rect(184*_cst, 117*_cst, 30*_cst, 29*_cst));
+    pauser->setPosition(Vec2(origin.x + 32*_cst*3,
+                             origin.y + visibleSize.height - 32*_cst));
+    pauser->setScale(1.85);
+    pauser->setTag(1); // 1: running; 0: stopped
+    this->addChild(pauser);
+    
     /*
      <SubTexture name="pause_button" x="175" y="148" width="22" height="23"/>
      <SubTexture name="resume_button" x="216" y="145" width="25" height="27"/>
@@ -241,40 +258,53 @@ bool HelloWorld::init()
     this->addChild(audio_button);
     
     auto au_listen = EventListenerTouchOneByOne::create();
-    au_listen->onTouchBegan = [this, audio_button, _cst](Touch *t, Event *event){
+    au_listen->onTouchBegan = [this, audio, audio_button, pauser, _cst](Touch *t, Event *event){
         if (audio_button->getBoundingBox().containsPoint(t->getLocation())) {
             if (this->audio_count) {
+                if (audio->isBackgroundMusicPlaying()) {
+                    audio->pauseBackgroundMusic();
+                    audio_button->setTag(1);
+                }
                 audio_button->setTextureRect(Rect(216*_cst, 145*_cst, 25*_cst, 27*_cst));
                 this->audio_count = 0;
             } else {
+                if (audio_button->getTag() == 1) {
+                    audio->resumeBackgroundMusic();
+                } else {
+                    audio->playBackgroundMusic("res/dance_to_the_death.mp3", true);
+                }
+                audio_button->setTag(5);
                 audio_button->setTextureRect(Rect(175*_cst, 148*_cst, 22*_cst, 23*_cst));
                 this->audio_count = 1;
+            }
+        } else if (pauser->getBoundingBox().containsPoint(t->getLocation())) {
+            if (pauser->getTag() == 1) {
+                audio->pauseAllEffects();
+                audio->pauseBackgroundMusic();
+                Director::getInstance()->stopAnimation();
+                pauser->setTag(0);
+            } else {
+                if (this->audio_count) {
+                    audio->resumeAllEffects();
+                    audio->resumeBackgroundMusic();
+                }
+                Director::getInstance()->startAnimation();
+                pauser->setTag(1);
             }
         }
         return false;
     };
-    // Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(au_listen, this);
     Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(au_listen, -128);
     
-    auto audio = SimpleAudioEngine::getInstance();
-    audio->preloadEffect("res/explosion.mp3");
-    audio->preloadEffect("res/shoot.mp3");
-    audio->preloadBackgroundMusic("res/dance_to_the_death.mp3");
     
-    audio->setEffectsVolume(0.5);
-    audio->setBackgroundMusicVolume(0.95);
-    
-    // play BGM
-    audio->playBackgroundMusic("res/dance_to_the_death.mp3", true);
+    if (!SimpleAudioEngine::getInstance()->isBackgroundMusicPlaying() && this->audio_count) {
+        SimpleAudioEngine::getInstance()->playBackgroundMusic("res/dance_to_the_death.mp3", true);
+    }
     
     // add bullets
     // red: Rect(112*_cst, 2*_cst, 9*_cst, 17*_cst)
     // black: Rect(66*_cst, 237*_cst, 7*_cst, 20*_cst)
     schedule([this, audio, visibleSize, origin, _cst, plane](float f){
-        
-//        if (audio_count) {
-//            audio->playEffect("res/shoot.mp3");
-//        }
         
         float dur_time = 0.8; // time to fly through height
         Sprite *bullet;
@@ -900,7 +930,8 @@ bool HelloWorld::init()
                                             CallFunc::create([this, plane](){
                 this->removeChild(plane);
                 auto _game_over = GameOverScene::createScene(this->_score);
-                this->retain();
+                //this->retain();
+                this->unscheduleAllCallbacks();
                 auto trans = TransitionFlipAngular::create(1.0, _game_over);
                 Director::getInstance()->replaceScene(trans);
             }),
@@ -929,7 +960,7 @@ bool HelloWorld::init()
                                                 CallFunc::create([this, plane](){
                 this->removeChild(plane);
                 auto _game_win = GameWinScene::createScene(this->_score);
-                this->retain();
+                this->unscheduleAllCallbacks();
                 auto trans = TransitionFlipAngular::create(1.0, _game_win);
                 Director::getInstance()->replaceScene(trans);
             }),

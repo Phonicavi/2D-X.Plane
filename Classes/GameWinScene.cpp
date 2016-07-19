@@ -24,9 +24,10 @@ bool GameWinScene::init()
                                            "CloseNormal.png",
                                            "CloseSelected.png",
                                            CC_CALLBACK_1(GameWinScene::menuCloseCallback, this));
-    
-    closeItem->setPosition(Vec2(origin.x + visibleSize.width - closeItem->getContentSize().width/2,
-                                origin.y + closeItem->getContentSize().height/2));
+    float _cit = 1.5;
+    closeItem->setScale(_cit);
+    closeItem->setPosition(Vec2(origin.x + visibleSize.width - _cit*closeItem->getContentSize().width/2,
+                                origin.y + _cit*closeItem->getContentSize().height/2));
     
     // create menu, it's an autorelease object
     auto menu = Menu::create(closeItem, NULL);
@@ -44,6 +45,25 @@ bool GameWinScene::init()
     bgi->setScale(_scale_times);
     this->addChild(bgi, 0);
     
+    // new game button
+    auto new_game = Label::createWithTTF("New Game", "fonts/Marker Felt.ttf", 18);
+    new_game->setPosition(origin.x + visibleSize.width/2,
+                          origin.y + 3*new_game->getContentSize().height);
+    new_game->setTextColor(Color4B(155, 155, 155, 75));
+    this->addChild(new_game, 1);
+    auto listen = EventListenerTouchOneByOne::create();
+    listen->onTouchBegan = [this, new_game, listen](Touch *t, Event *event){
+        if (new_game->getBoundingBox().containsPoint(t->getLocation())) {
+            Director::getInstance()->getEventDispatcher()->removeEventListener(listen);
+            auto scene = HelloWorld::createScene();
+            this->unscheduleAllCallbacks();
+            auto trans = TransitionFlipAngular::create(1.0, scene);
+            Director::getInstance()->replaceScene(trans);
+        }
+        return false;
+    };
+    Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listen, this);
+    
     schedule([this, bgi](float f){
         if (bgf) {
             bgi->setTexture(back_02);
@@ -52,7 +72,7 @@ bool GameWinScene::init()
             bgi->setTexture(back_01);
             bgf = true;
         }
-    }, 10.0, "Change Background");
+    }, 7.0, "Change Background");
     
     return true;
 }

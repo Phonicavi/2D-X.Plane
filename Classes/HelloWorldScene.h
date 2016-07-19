@@ -49,7 +49,7 @@ private:
     int star = 10;
     float _plane_sp = 1.5;
     
-    int audio_count = 0;
+    int audio_count = 1;
     
 public:
     static cocos2d::Scene* createScene();

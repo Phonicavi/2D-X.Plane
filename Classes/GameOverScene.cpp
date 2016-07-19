@@ -24,9 +24,10 @@ bool GameOverScene::init()
                                            "CloseNormal.png",
                                            "CloseSelected.png",
                                            CC_CALLBACK_1(GameOverScene::menuCloseCallback, this));
-    
-    closeItem->setPosition(Vec2(origin.x + visibleSize.width - closeItem->getContentSize().width/2,
-                                origin.y + closeItem->getContentSize().height/2));
+    float _cit = 1.5;
+    closeItem->setScale(_cit);
+    closeItem->setPosition(Vec2(origin.x + visibleSize.width - _cit*closeItem->getContentSize().width/2,
+                                origin.y + _cit*closeItem->getContentSize().height/2));
     
     // create menu, it's an autorelease object
     auto menu = Menu::create(closeItem, NULL);
@@ -43,6 +44,25 @@ bool GameOverScene::init()
                              visibleSize.height / bgi->getContentSize().height);
     bgi->setScale(_scale_times);
     this->addChild(bgi, 0);
+    
+    // new game button
+    auto restart = Label::createWithTTF("Restart", "fonts/Marker Felt.ttf", 18);
+    restart->setPosition(origin.x + visibleSize.width/2,
+                         origin.y + 3*restart->getContentSize().height);
+    restart->setTextColor(Color4B(155, 155, 155, 75));
+    this->addChild(restart, 1);
+    auto listen = EventListenerTouchOneByOne::create();
+    listen->onTouchBegan = [this, restart, listen](Touch *t, Event *event){
+        if (restart->getBoundingBox().containsPoint(t->getLocation())) {
+            Director::getInstance()->getEventDispatcher()->removeEventListener(listen);
+            auto scene = HelloWorld::createScene();
+            this->unscheduleAllCallbacks();
+            auto trans = TransitionFlipAngular::create(1.0, scene);
+            Director::getInstance()->replaceScene(trans);
+        }
+        return false;
+    };
+    Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listen, this);
     
     schedule([this, bgi](float f){
         if (bgf) {
@@ -87,7 +107,7 @@ cocos2d::Scene* GameOverScene::createScene(int _score)
     score_board->setSystemFontSize(16);
     label->setTextColor(Color4B(55, 55, 55, 85));
     score_board->setTextColor(Color4B(55, 55, 55, 85));
-    
+
     
     // add the label as a child to this layer
     layer->addChild(label, 1);
