@@ -12,12 +12,18 @@
 #include <stdio.h>
 #include "cocos2d.h"
 #include "cocos-ext.h"
+#include "SimpleAudioEngine.h"
 
 USING_NS_CC;
 USING_NS_CC_EXT;
 
 class GameWinScene : public cocos2d::Layer
 {
+private:
+    cocos2d::Texture2D *back_01;
+    cocos2d::Texture2D *back_02;
+    bool bgf = true;
+    
 public:
     virtual bool init();
     

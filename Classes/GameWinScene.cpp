@@ -35,12 +35,24 @@ bool GameWinScene::init()
     this->addChild(menu, 1);
     
     // add background
-    auto bgi = Sprite::create("res/bg_01.jpg");
+    back_01 = Director::getInstance()->getTextureCache()->addImage("res/bg_01.jpg");
+    back_02 = Director::getInstance()->getTextureCache()->addImage("res/bg_02.jpg");
+    auto bgi = Sprite::createWithTexture(back_01);
     bgi->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height/2 + origin.y));
     float _scale_times = MAX(visibleSize.width / bgi->getContentSize().width,
                              visibleSize.height / bgi->getContentSize().height);
     bgi->setScale(_scale_times);
     this->addChild(bgi, 0);
+    
+    schedule([this, bgi](float f){
+        if (bgf) {
+            bgi->setTexture(back_02);
+            bgf = false;
+        } else {
+            bgi->setTexture(back_01);
+            bgf = true;
+        }
+    }, 10.0, "Change Background");
     
     return true;
 }
@@ -107,6 +119,9 @@ cocos2d::Scene* GameWinScene::createScene(int _score)
 void GameWinScene::menuCloseCallback(Ref* pSender)
 {
     //Close the cocos2d-x game scene and quit the application
+    this->unscheduleAllCallbacks();
+    CocosDenshion::SimpleAudioEngine::getInstance()->stopBackgroundMusic();
+    
     Director::getInstance()->end();
     
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)

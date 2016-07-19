@@ -3,6 +3,7 @@
 
 #include "cocos2d.h"
 #include "cocos-ext.h"
+#include "SimpleAudioEngine.h"
 
 USING_NS_CC;
 USING_NS_CC_EXT;
@@ -14,11 +15,15 @@ private:
     int _score_b = 1500;
     int _score_m = 800;
     int _score_s = 100;
-    bool _touch_flag;
+    bool _touch_flag = false;
+    bool bgf = true;
     
-    cocos2d::Vec2 _touch_p;
+    cocos2d::Vec2 _touch_p = Vec2(0, 0);
     
     cocos2d::Texture2D *img;
+    cocos2d::Texture2D *star_img;
+    cocos2d::Texture2D *back_01;
+    cocos2d::Texture2D *back_02;
     
     cocos2d::Vector<Sprite*> _bullets;
     cocos2d::Vector<Sprite*> _targets_b;
@@ -32,6 +37,7 @@ private:
     float freq_b = 6.0;
     float freq_m = 3.0;
     float freq_s = 0.8;
+    float shoot_freq = 0.18;
     
     int _level = 1;
     int level1 = 20000;
@@ -43,7 +49,7 @@ private:
     int star = 10;
     float _plane_sp = 1.5;
     
-    int audio_count = 1;
+    int audio_count = 0;
     
 public:
     static cocos2d::Scene* createScene();

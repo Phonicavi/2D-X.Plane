@@ -1,5 +1,4 @@
 #include "HelloWorldScene.h"
-#include "SimpleAudioEngine.h"
 #include "GameWinScene.hpp"
 #include "GameOverScene.hpp"
 
@@ -33,8 +32,6 @@ bool HelloWorld::init()
     
     auto visibleSize = Director::getInstance()->getVisibleSize();
     auto origin = Director::getInstance()->getVisibleOrigin();
-    _touch_flag = false;
-    _touch_p = Vec2(0, 0);
 
     /////////////////////////////
     // 2. add a menu item with "X" image, which is clicked to quit the program
@@ -65,7 +62,7 @@ bool HelloWorld::init()
     auto label = Label::createWithTTF("2D-X Plane", "fonts/Marker Felt.ttf", 24);
     auto score_board = Label::create();
     auto level_board = Label::create();
-    auto star_img = Director::getInstance()->getTextureCache()->addImage("res/star.png");
+    star_img = Director::getInstance()->getTextureCache()->addImage("res/star.png");
     auto star_board = Sprite::createWithTexture(star_img);
     auto star_cal = Label::createWithTTF(StringUtils::format("x%d", this->star), "fonts/Marker Felt.ttf", 12);
     // position the label on the center of the screen
@@ -103,15 +100,28 @@ bool HelloWorld::init()
     
 
     // add Background
-    auto bgi = Sprite::create("res/bg_02.jpg");
+    back_01 = Director::getInstance()->getTextureCache()->addImage("res/bg_01.jpg");
+    back_02 = Director::getInstance()->getTextureCache()->addImage("res/bg_02.jpg");
+    auto bgi = Sprite::createWithTexture(back_01);
     bgi->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height/2 + origin.y));
     float _scale_times = MAX(visibleSize.width / bgi->getContentSize().width,
                              visibleSize.height / bgi->getContentSize().height);
     bgi->setScale(_scale_times);
     this->addChild(bgi, 0);
+    
+    schedule([this, bgi](float f){
+        if (bgf) {
+            bgi->setTexture(back_02);
+            bgf = false;
+        } else {
+            bgi->setTexture(back_01);
+            bgf = true;
+        }
+    }, 15.0, "Change Background");
 
     // add "icon" splash
-    auto sprite = Sprite::create("res/icon72x72.png");
+    auto icon_img = Director::getInstance()->getTextureCache()->addImage("res/icon72x72.png");
+    auto sprite = Sprite::createWithTexture(icon_img);
 
     // position the sprite on the center of the screen
     sprite->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height/2 + origin.y));
@@ -125,13 +135,57 @@ bool HelloWorld::init()
     const float _w_img = 256.0, _h_img = 256.0;
     float _cst = MAX(img->getContentSize().width / _w_img, img->getContentSize().height/ _h_img);
     float _start_height = 20;
-    // Rect(2, 168, 62, 75)
-    auto plane = Sprite::createWithTexture(img, Rect(2*_cst, 168*_cst, 62*_cst, 75*_cst));
+    /*
+     <SubTexture name="hero_1" x="66" y="168" width="62" height="68"/>
+     <SubTexture name="hero_2" x="2" y="168" width="62" height="75"/>
+     */
+    auto plane = Sprite::create();
+    plane->setTexture(img);
+    plane->setTextureRect(Rect(66*_cst, 168*_cst, 62*_cst, 68*_cst));
+    plane->setTag(1);
     plane->setPosition(Vec2(origin.x + plane->getContentSize().width/2 +
                             random(0.0f, visibleSize.width - plane->getContentSize().width),
                             origin.y + plane->getContentSize().height/2 + _start_height));
     
     this->addChild(plane, 2);
+    
+    schedule([plane, _cst](float f){
+        if (plane->getTag()) {
+            plane->setTag(0);
+            plane->setTextureRect(Rect(66*_cst, 168*_cst, 62*_cst, 68*_cst));
+        } else {
+            plane->setTag(1);
+            plane->setTextureRect(Rect(2*_cst, 168*_cst, 62*_cst, 75*_cst));
+        }
+        
+    }, 0.5, "Shining");
+    
+    // add star
+//    schedule([this, visibleSize, origin](float f){
+//        auto free_star = Sprite::createWithTexture(star_img);
+//        float _star_x = random(free_star->getContentSize().width/2,
+//                              visibleSize.width - free_star->getContentSize().width/2);
+//        free_star->setPosition(origin.x + _star_x,
+//                               origin.y + visibleSize.height + free_star->getContentSize().height/2);
+//        this->addChild(free_star, 1);
+//        ccBezierConfig bzf;
+//        auto conf_1 = random(3.0f, 12.0f);
+//        auto conf_2 = random(3.0f, 12.0f);
+//        auto conf_3 = random(3.0f, 12.0f);
+//        auto conf_4 = random(3.0f, 12.0f);
+//        bzf.endPosition = Vec2(origin.x + random(free_star->getContentSize().width/2,
+//                                                 visibleSize.width - free_star->getContentSize().width/2),
+//                               origin.y - free_star->getContentSize().height/2);
+//        bzf.controlPoint_1 = Vec2(free_star->getPositionX() + random(-conf_1*free_star->getContentSize().width,
+//                                                                     conf_2*free_star->getContentSize().width),
+//                                  2*free_star->getPositionY()/3);
+//        bzf.controlPoint_2 = Vec2(free_star->getPositionX() + random(-conf_3*free_star->getContentSize().width,
+//                                                                     conf_4*free_star->getContentSize().width),
+//                                  free_star->getPositionY()/3);
+//        auto Bezier = BezierTo::create(random(3.0f, 6.0f), bzf);
+//        free_star->runAction();
+//        return false;
+//    }, 5.0, "More Stars");
     
     // CCLOG("visibleSize: %f %f", visibleSize.width, visibleSize.height);
     // CCLOG("plane contentSize: %f %f", plane->getContentSize().width, plane->getContentSize().height);
@@ -169,14 +223,18 @@ bool HelloWorld::init()
     Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(tp_listen, 1);
     
     
-    // audio effects
+    // audio
     /*
      <SubTexture name="pause_button" x="175" y="148" width="22" height="23"/>
      <SubTexture name="resume_button" x="216" y="145" width="25" height="27"/>
      */
     auto audio_button = Sprite::create();
     audio_button->setTexture(img);
-    audio_button->setTextureRect(Rect(175*_cst, 148*_cst, 22*_cst, 23*_cst));
+    if (this->audio_count) {
+        audio_button->setTextureRect(Rect(175*_cst, 148*_cst, 22*_cst, 23*_cst));
+    } else {
+        audio_button->setTextureRect(Rect(216*_cst, 145*_cst, 25*_cst, 27*_cst));
+    }
     audio_button->setPosition(Vec2(origin.x + 32*_cst,
                                    origin.y + visibleSize.height - 32*_cst));
     audio_button->setScale(2.0);
@@ -201,16 +259,22 @@ bool HelloWorld::init()
     auto audio = SimpleAudioEngine::getInstance();
     audio->preloadEffect("res/explosion.mp3");
     audio->preloadEffect("res/shoot.mp3");
+    audio->preloadBackgroundMusic("res/dance_to_the_death.mp3");
     
+    audio->setEffectsVolume(0.5);
+    audio->setBackgroundMusicVolume(0.95);
+    
+    // play BGM
+    audio->playBackgroundMusic("res/dance_to_the_death.mp3", true);
     
     // add bullets
     // red: Rect(112*_cst, 2*_cst, 9*_cst, 17*_cst)
     // black: Rect(66*_cst, 237*_cst, 7*_cst, 20*_cst)
     schedule([this, audio, visibleSize, origin, _cst, plane](float f){
         
-        if (audio_count) {
-            audio->playEffect("res/shoot.mp3");
-        }
+//        if (audio_count) {
+//            audio->playEffect("res/shoot.mp3");
+//        }
         
         float dur_time = 0.8; // time to fly through height
         Sprite *bullet;
@@ -223,7 +287,7 @@ bool HelloWorld::init()
         if (_level == 1 || _level > 2) {
             auto fly = MoveTo::create((visibleSize.height - bullet->getPositionY()) / (visibleSize.height/dur_time),
                                       Vec2(plane->getPositionX(),
-                                           visibleSize.height + bullet->getContentSize().height/2));
+                                           origin.y + visibleSize.height + bullet->getContentSize().height/2));
             
             bullet->setPosition(Vec2(plane->getPositionX(),
                                      plane->getPositionY() + bullet->getContentSize().height));
@@ -414,7 +478,7 @@ bool HelloWorld::init()
             this->addChild(p2, 1);
         }
         
-    }, 0.15, "Shoot");
+    }, shoot_freq, "Shoot");
     
     
     // upgrade enemy
@@ -437,6 +501,8 @@ bool HelloWorld::init()
             _level = 2;
             // speed
             _plane_sp = 1.7;
+            // shoot
+            shoot_freq = 0.15;
         }
         if (this->_score > level2) {
             // _score
@@ -455,6 +521,8 @@ bool HelloWorld::init()
             _level = 3;
             // speed
             _plane_sp = 2.0;
+            // shoot
+            shoot_freq = 0.2;
         }
         if (this->_score > level3) {
             // _score
@@ -467,12 +535,14 @@ bool HelloWorld::init()
             this->freq_s = 0.65;
             // _HP++
             this->_HP_b = 24;
-            this->_HP_m = 10;
+            this->_HP_m = 12;
             this->_HP_s = 5;
             // level
             _level = 4;
             // speed
-            _plane_sp = 2.1;
+            _plane_sp = 2.4;
+            // shoot
+            shoot_freq = 0.12;
         }
         if (this->_score > level4) {
             // _score
@@ -480,17 +550,19 @@ bool HelloWorld::init()
             this->_score_m = 1200;
             this->_score_s = 100;
             // freq
-            this->freq_b = 4.3;
-            this->freq_m = 2.1;
-            this->freq_s = 0.6;
+            this->freq_b = 4.2;
+            this->freq_m = 2.0;
+            this->freq_s = 0.58;
             // _HP++
-            this->_HP_b = 30;
-            this->_HP_m = 15;
+            this->_HP_b = 36;
+            this->_HP_m = 18;
             this->_HP_s = 7;
             // level
             _level = 5;
             // speed
-            _plane_sp = 2.4;
+            _plane_sp = 3.0;
+            // shoot
+            shoot_freq = 0.18;
         }
         if (this->_score > level5) {
             // _score
@@ -509,6 +581,8 @@ bool HelloWorld::init()
             _level = 6;
             // speed
             _plane_sp = 3.0;
+            // shoot
+            shoot_freq = 0.15;
         }
         
         level_board->setString(StringUtils::format("Level %d", this->_level));
@@ -756,7 +830,7 @@ bool HelloWorld::init()
             exp->setPosition(Vec2(_t_s->getPositionX(), _t_s->getPositionY()-_t_s->getContentSize().height/4));
             this->addChild(exp);
             if (audio_count) {
-                audio->playEffect("res/explosion.mp3");
+                audio->playEffect("res/shoot.mp3");
             }
             exp->runAction(Sequence::create(
                                             MoveBy::create(0.2, Vec2(0, 0)),
@@ -771,7 +845,7 @@ bool HelloWorld::init()
     
     
     // scene: game over or scene: win
-    schedule([this, audio, visibleSize, origin, plane, _cst](float f){
+    schedule([this, audio, visibleSize, origin, plane, _cst, tp_listen, au_listen](float f){
         
         auto plane_box = plane->getBoundingBox();
         bool boooom = false;
@@ -799,28 +873,67 @@ bool HelloWorld::init()
             }
         }
         if (boooom || this->star <= 0) {
+            // remove Listener
+            Director::getInstance()->getEventDispatcher()->removeEventListener(tp_listen);
+            Director::getInstance()->getEventDispatcher()->removeEventListener(au_listen);
+            // audio->stopBackgroundMusic();
+            // game over
+            this->unschedule("Game Final");
+            this->unschedule("Change Background");
+            this->unschedule("Enemy_b");
+            this->unschedule("Enemy_m");
+            this->unschedule("Enemy_s");
+            this->unschedule("More Targets");
+            this->unschedule("Shoot");
+            this->unschedule("Shining");
+            this->unschedule("Action");
+            // this->unschedule("More Stars");
             // add death explosion
-            auto exp = Sprite::createWithTexture(img, Rect(201*_cst, 44*_cst, 40*_cst, 42*_cst));
-            exp->setPosition(Vec2(plane->getPositionX(), plane->getPositionY()));
-            this->addChild(exp);
+            plane->setTextureRect(Rect(201*_cst, 44*_cst, 40*_cst, 42*_cst));
+            plane->setScale(2.0);
             if (audio_count) {
                 audio->playEffect("res/explosion.mp3");
             }
-            exp->runAction(Sequence::create(
-                                            MoveBy::create(0.5, Vec2(0, 0)),
-                                            // ShuffleTiles::create(0.8, Size(180, 180), 5),
-                                            CallFunc::create([this, exp](){ this->removeChild(exp);}),
+            plane->runAction(Sequence::create(
+                                            MoveBy::create(0.8, Vec2(0, 0)),
+                                            // ShuffleTiles::create(0.8, Size(10, 10), 5),
+                                            CallFunc::create([this, plane](){
+                this->removeChild(plane);
+                auto _game_over = GameOverScene::createScene(this->_score);
+                this->retain();
+                auto trans = TransitionFlipAngular::create(1.0, _game_over);
+                Director::getInstance()->replaceScene(trans);
+            }),
                                             NULL));
-            
-            // game over
-            auto _game_over = GameOverScene::createScene(this->_score);
-            this->retain();
-            Director::getInstance()->replaceScene(_game_over);
-        } else if (this->_score > level5 && this->star > 0) {
-            // game wim
-            auto _game_win = GameWinScene::createScene(this->_score);
-            this->retain();
-            Director::getInstance()->replaceScene(_game_win);
+        } else if (this->_score >= level5 && this->star > 0) {
+            // remove Listener
+            Director::getInstance()->getEventDispatcher()->removeEventListener(tp_listen);
+            Director::getInstance()->getEventDispatcher()->removeEventListener(au_listen);
+            // audio->stopBackgroundMusic();
+            // game win
+            this->unschedule("Game Final");
+            this->unschedule("Change Background");
+            this->unschedule("Enemy_b");
+            this->unschedule("Enemy_m");
+            this->unschedule("Enemy_s");
+            this->unschedule("More Targets");
+            this->unschedule("Shoot");
+            this->unschedule("Shining");
+            this->unschedule("Action");
+            // this->unschedule("More Stars");
+            plane->runAction(Sequence::create(
+                                                MoveTo::create(1.2, Vec2(plane->getPositionX(),
+                                                                         origin.y + visibleSize.height +
+                                                                         plane->getContentSize().height/2)),
+                                                // ShuffleTiles::create(0.3, Size(180, 180), 5),
+                                                CallFunc::create([this, plane](){
+                this->removeChild(plane);
+                auto _game_win = GameWinScene::createScene(this->_score);
+                this->retain();
+                auto trans = TransitionFlipAngular::create(1.0, _game_win);
+                Director::getInstance()->replaceScene(trans);
+            }),
+                                                NULL));
         }
 
     }, "Game Final");
@@ -831,6 +944,10 @@ bool HelloWorld::init()
 void HelloWorld::menuCloseCallback(Ref* pSender)
 {
     //Close the cocos2d-x game scene and quit the application
+    this->unscheduleAllCallbacks();
+    SimpleAudioEngine::getInstance()->stopAllEffects();
+    SimpleAudioEngine::getInstance()->stopBackgroundMusic();
+    
     Director::getInstance()->end();
 
     #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)

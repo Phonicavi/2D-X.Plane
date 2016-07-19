@@ -1,8 +1,12 @@
 # 2D-X.Plane  
 
-	微信打飞机 Cocos2D-X实现  
-	C++  
-	只测试了iPhone5s(iOS 9.3)  
+```
+   微信打飞机 Cocos2D-X实现  
+   C++  
+   BGM是***Dance to the Death***  
+   只测试了iPhone5s(iOS 9.3)  
+
+```
 
 
 ## 版本历史  
