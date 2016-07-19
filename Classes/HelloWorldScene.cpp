@@ -259,7 +259,7 @@ bool HelloWorld::init()
     
     auto au_listen = EventListenerTouchOneByOne::create();
     au_listen->onTouchBegan = [this, audio, audio_button, pauser, _cst](Touch *t, Event *event){
-        if (audio_button->getBoundingBox().containsPoint(t->getLocation())) {
+        if (pauser->getTag() && audio_button->getBoundingBox().containsPoint(t->getLocation())) {
             if (this->audio_count) {
                 if (audio->isBackgroundMusicPlaying()) {
                     audio->pauseBackgroundMusic();
