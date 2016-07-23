@@ -1,6 +1,7 @@
 #include "HelloWorldScene.h"
 #include "GameWinScene.hpp"
 #include "GameOverScene.hpp"
+#include "SimpleAudioEngine.h"
 
 USING_NS_CC;
 using namespace CocosDenshion;
@@ -228,7 +229,7 @@ bool HelloWorld::init()
     auto audio = SimpleAudioEngine::getInstance();
     audio->preloadEffect("res/explosion.mp3");
     audio->preloadEffect("res/shoot.mp3");
-    audio->preloadBackgroundMusic("res/dance_to_the_death.mp3");
+    audio->preloadBackgroundMusic("res/MONO - Katana.mp3");
     
     audio->setEffectsVolume(0.5);
     audio->setBackgroundMusicVolume(0.95);
@@ -271,7 +272,7 @@ bool HelloWorld::init()
                 if (audio_button->getTag() == 1) {
                     audio->resumeBackgroundMusic();
                 } else {
-                    audio->playBackgroundMusic("res/dance_to_the_death.mp3", true);
+                    audio->playBackgroundMusic("res/MONO - Katana.mp3", true);
                 }
                 audio_button->setTag(5);
                 audio_button->setTextureRect(Rect(175*_cst, 148*_cst, 22*_cst, 23*_cst));
@@ -298,7 +299,7 @@ bool HelloWorld::init()
     
     
     if (!SimpleAudioEngine::getInstance()->isBackgroundMusicPlaying() && this->audio_count) {
-        SimpleAudioEngine::getInstance()->playBackgroundMusic("res/dance_to_the_death.mp3", true);
+        SimpleAudioEngine::getInstance()->playBackgroundMusic("res/MONO - Katana.mp3", true);
     }
     
     // add bullets
@@ -929,7 +930,7 @@ bool HelloWorld::init()
                                             // ShuffleTiles::create(0.8, Size(10, 10), 5),
                                             CallFunc::create([this, plane](){
                 this->removeChild(plane);
-                auto _game_over = GameOverScene::createScene(this->_score);
+                auto _game_over = GameOverScene::createScene(this);
                 //this->retain();
                 this->unscheduleAllCallbacks();
                 auto trans = TransitionFlipAngular::create(1.0, _game_over);
@@ -959,7 +960,7 @@ bool HelloWorld::init()
                                                 // ShuffleTiles::create(0.3, Size(180, 180), 5),
                                                 CallFunc::create([this, plane](){
                 this->removeChild(plane);
-                auto _game_win = GameWinScene::createScene(this->_score);
+                auto _game_win = GameWinScene::createScene(this);
                 this->unscheduleAllCallbacks();
                 auto trans = TransitionFlipAngular::create(1.0, _game_win);
                 Director::getInstance()->replaceScene(trans);

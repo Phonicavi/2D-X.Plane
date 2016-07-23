@@ -3,7 +3,6 @@
 
 #include "cocos2d.h"
 #include "cocos-ext.h"
-#include "SimpleAudioEngine.h"
 
 USING_NS_CC;
 USING_NS_CC_EXT;
@@ -11,7 +10,6 @@ USING_NS_CC_EXT;
 class HelloWorld : public cocos2d::Layer
 {
 private:
-    int _score = 0;
     int _score_b = 1500;
     int _score_m = 800;
     int _score_s = 100;
@@ -40,16 +38,21 @@ private:
     float shoot_freq = 0.18;
     
     int _level = 1;
-    int level1 = 20000;
-    int level2 = 50000;
-    int level3 = 100000;
-    int level4 = 200000;
-    int level5 = 500000;
+    int level1 = 10000;
+    int level2 = 20000;
+    int level3 = 50000;
+    int level4 = 100000;
+    int level5 = 200000;
     
-    int star = 10;
     float _plane_sp = 1.5;
     
     int audio_count = 1;
+    
+public:
+    int _score = 0;
+    
+    const int star_limit = 12;
+    int star = 12;
     
 public:
     static cocos2d::Scene* createScene();

@@ -7,6 +7,7 @@
 //
 
 #include "GameWinScene.hpp"
+#include "WelcomeScene.hpp"
 
 USING_NS_CC;
 
@@ -47,12 +48,19 @@ bool GameWinScene::init()
     
     // new game button
     auto new_game = Label::createWithTTF("New Game", "fonts/Marker Felt.ttf", 18);
+    auto back = Label::createWithTTF("Back", "fonts/Marker Felt.ttf", 18);
     new_game->setPosition(origin.x + visibleSize.width/2,
-                          origin.y + 3*new_game->getContentSize().height);
+                          origin.y + visibleSize.height/3);
+    back->setPosition(origin.x + visibleSize.width/2,
+                      origin.y + visibleSize.height/3 - 5*back->getContentSize().height/3);
     new_game->setTextColor(Color4B(155, 155, 155, 75));
+    back->setTextColor(Color4B(155, 155, 155, 75));
     this->addChild(new_game, 1);
+    this->addChild(back, 1);
+    
+    
     auto listen = EventListenerTouchOneByOne::create();
-    listen->onTouchBegan = [this, new_game, listen](Touch *t, Event *event){
+    listen->onTouchBegan = [this, new_game, back, listen](Touch *t, Event *event){
         if (new_game->getBoundingBox().containsPoint(t->getLocation())) {
             Director::getInstance()->getEventDispatcher()->removeEventListener(listen);
             auto scene = HelloWorld::createScene();
@@ -60,8 +68,17 @@ bool GameWinScene::init()
             auto trans = TransitionFlipAngular::create(1.0, scene);
             Director::getInstance()->replaceScene(trans);
         }
+        if (back->getBoundingBox().containsPoint(t->getLocation())) {
+            Director::getInstance()->getEventDispatcher()->removeEventListener(listen);
+            CocosDenshion::SimpleAudioEngine::getInstance()->stopBackgroundMusic();
+            auto scene = WelcomeScene::createScene();
+            this->unscheduleAllCallbacks();
+            auto trans = TransitionFlipAngular::create(1.0, scene);
+            Director::getInstance()->replaceScene(trans);
+        }
         return false;
     };
+    
     Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listen, this);
     
     schedule([this, bgi](float f){
@@ -85,7 +102,7 @@ cocos2d::Scene* GameWinScene::createScene()
     return scene;
 }
 
-cocos2d::Scene* GameWinScene::createScene(int _score)
+cocos2d::Scene* GameWinScene::createScene(HelloWorld *helloworld)
 {
     auto scene = Scene::create();
     auto layer = GameWinScene::create();
@@ -97,9 +114,20 @@ cocos2d::Scene* GameWinScene::createScene(int _score)
     auto label = Label::createWithTTF("You Win!!", "fonts/Marker Felt.ttf", 24);
     auto score_board = Label::create();
     auto star_img = Director::getInstance()->getTextureCache()->addImage("res/star.png");
+    auto star_grey_img = Director::getInstance()->getTextureCache()->addImage("res/star_grey.png");
+    
     auto star_board = Sprite::createWithTexture(star_img);
     auto star_left = Sprite::createWithTexture(star_img);
     auto star_right = Sprite::createWithTexture(star_img);
+    if (helloworld->star <= 9) {
+        star_right->setTexture(star_grey_img);
+    }
+    if (helloworld->star <= 6) {
+        star_board->setTexture(star_grey_img);
+    }
+    if (helloworld->star <= 3) {
+        star_left->setTexture(star_grey_img);
+    }
     
     // position the label on the center of the screen
     label->setPosition(Vec2(origin.x + visibleSize.width/2,
@@ -117,7 +145,7 @@ cocos2d::Scene* GameWinScene::createScene(int _score)
                                  origin.y + visibleSize.height/2 +
                                  star_board->getContentSize().height));
     // set text
-    score_board->setString(StringUtils::format("Total score: %d", _score));
+    score_board->setString(StringUtils::format("Total score: %d", helloworld->_score));
     score_board->setSystemFontName("fonts/Marker Felt.ttf");
     score_board->setSystemFontSize(16);
     label->setTextColor(Color4B(55, 55, 55, 85));

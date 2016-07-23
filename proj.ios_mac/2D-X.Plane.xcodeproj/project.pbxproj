@@ -48,6 +48,7 @@
 		D44C6210132DFF4E0009C878 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D44C620F132DFF4E0009C878 /* AudioToolbox.framework */; };
 		D5064F001D3BC2700014B3B7 /* GameOverScene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5064EFE1D3BC2700014B3B7 /* GameOverScene.cpp */; };
 		D5064F011D3BC2700014B3B7 /* GameOverScene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5064EFE1D3BC2700014B3B7 /* GameOverScene.cpp */; };
+		D57155251D43B40C00406ED4 /* WelcomeScene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D57155231D43B40C00406ED4 /* WelcomeScene.cpp */; };
 		D5A3FB7F1D3D637800D13941 /* GameWinScene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5A3FB7D1D3D637800D13941 /* GameWinScene.cpp */; };
 		D5A3FB801D3D637800D13941 /* GameWinScene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5A3FB7D1D3D637800D13941 /* GameWinScene.cpp */; };
 		D5D353D81D3B5F110083537D /* Default.png in Resources */ = {isa = PBXBuildFile; fileRef = D5D353D71D3B5F110083537D /* Default.png */; };
@@ -151,6 +152,8 @@
 		D44C620F132DFF4E0009C878 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		D5064EFE1D3BC2700014B3B7 /* GameOverScene.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GameOverScene.cpp; sourceTree = "<group>"; };
 		D5064EFF1D3BC2700014B3B7 /* GameOverScene.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = GameOverScene.hpp; sourceTree = "<group>"; };
+		D57155231D43B40C00406ED4 /* WelcomeScene.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WelcomeScene.cpp; sourceTree = "<group>"; };
+		D57155241D43B40C00406ED4 /* WelcomeScene.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = WelcomeScene.hpp; sourceTree = "<group>"; };
 		D5A3FB7D1D3D637800D13941 /* GameWinScene.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GameWinScene.cpp; sourceTree = "<group>"; };
 		D5A3FB7E1D3D637800D13941 /* GameWinScene.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = GameWinScene.hpp; sourceTree = "<group>"; };
 		D5D353D71D3B5F110083537D /* Default.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Default.png; sourceTree = "<group>"; };
@@ -309,6 +312,8 @@
 				D5064EFF1D3BC2700014B3B7 /* GameOverScene.hpp */,
 				D5A3FB7D1D3D637800D13941 /* GameWinScene.cpp */,
 				D5A3FB7E1D3D637800D13941 /* GameWinScene.hpp */,
+				D57155231D43B40C00406ED4 /* WelcomeScene.cpp */,
+				D57155241D43B40C00406ED4 /* WelcomeScene.hpp */,
 			);
 			name = Classes;
 			path = ../Classes;
@@ -503,6 +508,7 @@
 				D5064F001D3BC2700014B3B7 /* GameOverScene.cpp in Sources */,
 				46880B8819C43A87006E1F66 /* AppDelegate.cpp in Sources */,
 				D5A3FB7F1D3D637800D13941 /* GameWinScene.cpp in Sources */,
+				D57155251D43B40C00406ED4 /* WelcomeScene.cpp in Sources */,
 				46880B8A19C43A87006E1F66 /* HelloWorldScene.cpp in Sources */,
 				503AE10017EB989F00D1A890 /* AppController.mm in Sources */,
 				503AE10217EB989F00D1A890 /* RootViewController.mm in Sources */,

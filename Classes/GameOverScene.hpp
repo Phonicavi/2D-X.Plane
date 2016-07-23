@@ -35,7 +35,7 @@ public:
     CREATE_FUNC(GameOverScene);
     
     static cocos2d::Scene *createScene();
-    static cocos2d::Scene *createScene(int _score);
+    static cocos2d::Scene *createScene(HelloWorld *helloworld);
 };
 
 #endif /* GameOverScene_hpp */
